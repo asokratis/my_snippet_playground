@@ -98,7 +98,7 @@ ORDER BY prec;
 --C. To prove that it was by bad nature 100%, run query "Incremental by BAD NATURE?"
 SELECT
 '
-SELECT first_instances, second_instances, diff_no_instances, diff_no_instances_noupdate, diff_perc_instances, diff_perc_instances_noupdate, second_maxid, first_maxid, diff_no_id, diff_perc_id from (
+SELECT first_instances, second_instances, /*third_instances,*/  diff_no_instances, /*diff_no_instances_noupdate,*/ diff_perc_instances, /*diff_perc_instances_noupdate,*/ second_maxid, first_maxid, diff_no_id, diff_perc_id from (
 SELECT
         MAX(CASE WHEN caption = ''f'' THEN instances END)                                                                                               AS first_instances
        ,MAX(CASE WHEN caption = ''s'' THEN instances END)                                                                                               AS second_instances
@@ -130,9 +130,9 @@ SELECT
 SELECT
 '
 SELECT count(*) as secondtableinstances, count('+thetablename+'.'+primarykey+') as firsttableinstances
-FROM '+theschemaname+'.'+thetablename+'
-LEFT JOIN '+theschemaname+'.'+secondtable+'
+FROM '+theschemaname+'.'+secondtable+'
+LEFT JOIN '+theschemaname+'.'+thetablename+'
 ON '+thetablename+'.'+primarykey+' = '+secondtable+'.'+primarykey+'
-WHERE '+secondtable+'.'+primarykey+'  <= (SELECT MAX('+secondtable+'.'+primarykey+') FROM '+theschemaname+'.'+secondtable+')
+WHERE '+secondtable+'.'+primarykey+'  <= (SELECT MAX('+thetablename+'.'+primarykey+') FROM '+theschemaname+'.'+thetablename+')
 '
  FROM tmp_important_metadata;
