@@ -1,22 +1,26 @@
 --Version 0.01: This is an initial draft. Fits for some of my use case requirements. Will add more later to make this more robust, handle more use cases.
+--Version 0.02: Second schema name added in configurations, tried with other postgresql environments that are more strict to make it compatible, other fixes
 --Requirements: Latest Postgresql environment
-
 --Configurations on "temp_table_metadata" (Replace and fill in the text with prefix "INPUT_")
+DROP TABLE IF EXISTS temp_table_metadata;
+DROP TABLE IF EXISTS tmp_important_metadata;
+
 CREATE TEMPORARY TABLE temp_table_metadata AS (
 SELECT
-      substring(p.nspname,1,999)      AS theschemaname, --currently, both sibling tables are expected to be in both schema (i.e. put both sibling tables in a testing schema for testing purposes)
-      substring(c.relname,1,999)      AS thetablename,
-      a.attnum                        AS ordinalposition,
-      substring(a.attname,1,999)      AS thecolumnname,
-      substring(t.typname,1,999)      AS thedatatype,
-      '<INPUT_SECOND_SIBLING_TABLE>'  AS secondtable,
+      substring(p.nspname,1,999)::varchar(999)      AS theschemaname, --currently, both sibling tables are expected to be in both schema (i.e. put both sibling tables in a testing schema for testing purposes)
+      substring(c.relname,1,999)::varchar(999)      AS thetablename,
+      a.attnum::varchar(999)                        AS ordinalposition,
+      substring(a.attname,1,999)::varchar(999)      AS thecolumnname,
+      substring(t.typname,1,999)::varchar(999)      AS thedatatype,
+      '<INPUT_SECOND_SIBLING_TABLE>'::varchar(999)  AS secondtable,
+      '<INPUT_SECOND_SCHEMA>'::varchar(999)         AS secschemaname,
       CASE WHEN substring(a.attname,1,999) = '<INPUT_PRIMARY_KEY>' THEN 1 ELSE 0 END AS is_pk,
-      CASE WHEN position('int'       in lower(substring(t.typname,1,999))) <> 0 THEN '-1'
+      (CASE WHEN position('int'       in lower(substring(t.typname,1,999))) <> 0 THEN '-1'
            WHEN position('numeric'   in lower(substring(t.typname,1,999))) <> 0 THEN '-1.00'
            WHEN position('timestamp' in lower(substring(t.typname,1,999))) <> 0 THEN '''2001-01-01''::timestamp'
            --char for all other cases?
-           ELSE ''';''' END           AS nulloutput,
-      '<INPUT_UPDATED_COLUMN>'        AS updatedatcolumn --optional
+           ELSE ''';''' END)           AS nulloutput,
+      '<INPUT_UPDATED_COLUMN>'::varchar(999)        AS updatedatcolumn --optional
 
    FROM
    pg_class     c,
@@ -39,7 +43,8 @@ SELECT
       theschemaname,
       thetablename,
       secondtable,
-      updatedatcolumn
+      updatedatcolumn,
+      secschemaname
 
    FROM temp_table_metadata
 
@@ -54,30 +59,30 @@ SELECT output FROM
 (
 (SELECT -2               as prec,'SELECT COUNT(*) AS total_instances' AS output)
 UNION ALL
-(SELECT -1               as prec,',COUNT(s.' + (SELECT primarykey FROM tmp_important_metadata) + ') AS second_table_instances ')
+(SELECT -1               as prec,',COUNT(s.' || (SELECT primarykey FROM tmp_important_metadata) || ') AS second_table_instances ')
 UNION ALL
-(SELECT  0               as prec,',((COUNT(s.' + (SELECT primarykey FROM tmp_important_metadata) + ')/COUNT(*)::decimal)*100)::decimal(10,4) AS perc_second_table_instances ')
+(SELECT  0               as prec,',((COUNT(s.' || (SELECT primarykey FROM tmp_important_metadata) || ')/COUNT(*)::decimal)*100)::decimal(10,4) AS perc_second_table_instances ')
 UNION ALL
 (
-SELECT   ordinalposition as prec,',ABS(COUNT(CASE WHEN COALESCE(f.' + thecolumnname + ',' + nulloutput + ') = COALESCE(s.' + thecolumnname + ',' + nulloutput + ') THEN TRUE END) - COUNT(*)) AS ' + thecolumnname  as output
+SELECT   ordinalposition::bigint as prec,',ABS(COUNT(CASE WHEN COALESCE(f.' || thecolumnname || ',' || nulloutput || ') = COALESCE(s.' || thecolumnname || ',' || nulloutput || ') THEN TRUE END) - COUNT(*)) AS ' || thecolumnname  as output
 FROM  temp_table_metadata
 WHERE is_pk = 0
 )
 UNION ALL
 (
-SELECT (ordinalposition + 2000) as prec,',((ABS(COUNT(CASE WHEN COALESCE(f.' + thecolumnname + ',' + nulloutput + ') = COALESCE(s.' + thecolumnname + ',' + nulloutput + ') THEN TRUE END) - COUNT(*))/COUNT(*)::decimal)*100)::decimal(10,4) AS perc_' + thecolumnname  as output
+SELECT (ordinalposition::bigint + 2000) as prec,',((ABS(COUNT(CASE WHEN COALESCE(f.' || thecolumnname || ',' || nulloutput || ') = COALESCE(s.' || thecolumnname || ',' || nulloutput || ') THEN TRUE END) - COUNT(*))/COUNT(*)::decimal)*100)::decimal(10,4) AS perc_' || thecolumnname  as output
 FROM  temp_table_metadata
 WHERE is_pk = 0
 )
 UNION ALL
-(SELECT   9001            as prec,' FROM '      + theschemaname + '.' + thetablename + ' f ' as output FROM tmp_important_metadata)
+(SELECT   9001            as prec,' FROM '      || theschemaname || '.' || thetablename || ' f ' as output FROM tmp_important_metadata)
 UNION ALL
-(SELECT   9002            as prec,' LEFT JOIN ' + theschemaname + '.' + secondtable  + ' s ' as output FROM tmp_important_metadata)
+(SELECT   9002            as prec,' LEFT JOIN ' || secschemaname || '.' || secondtable  || ' s ' as output FROM tmp_important_metadata)
 UNION ALL
-(SELECT   9003            as prec,' ON f.' + primarykey + '= s.' + primarykey                as output FROM tmp_important_metadata)
+(SELECT   9003            as prec,' ON f.' || primarykey || '= s.' || primarykey                as output FROM tmp_important_metadata)
 UNION ALL
-(SELECT   9004            as prec, '-- WHERE s.' + updatedatcolumn + '<= (SELECT MAX(' + updatedatcolumn + ') as updated_at FROM  ' + theschemaname + '.' + thetablename + ' )' as output FROM tmp_important_metadata)
-)
+(SELECT   9004            as prec, '-- WHERE s.' || updatedatcolumn || '<= (SELECT MAX(' || updatedatcolumn || ') as updated_at FROM  ' || theschemaname || '.' || thetablename || ' )' as output FROM tmp_important_metadata)
+) SRC
 ORDER BY prec;
 
 --QUERY #2: GENERAL STATS OF THE DIFFERENCE WITHIN RECORDS OF 2 SIBLING TABLES IN TERMS OF PRIMARY KEY
@@ -113,14 +118,14 @@ SELECT
        -- ,100.00 - ROUND((MAX(CASE WHEN caption = ''t'' THEN instances END)::decimal / MAX(CASE WHEN caption = ''f'' THEN instances END)) * 100,4)     AS diff_perc_instances_noupdate
    FROM
    (
-    SELECT ''f'' as caption, COUNT(*) AS instances, MAX('+primarykey+') AS maxid, MAX('+updatedatcolumn+') as updated_at FROM '+theschemaname+'.'+thetablename+' f
+    SELECT ''f'' as caption, COUNT(*) AS instances, MAX('||primarykey||'::bigint) AS maxid FROM '||theschemaname||'.'||thetablename||' f
     UNION ALL
-    SELECT ''s'' as caption, COUNT(*) AS instances, MAX('+primarykey+') AS maxid, MAX('+updatedatcolumn+') as updated_at FROM '+theschemaname+'.'+secondtable+'  s
+    SELECT ''s'' as caption, COUNT(*) AS instances, MAX('||primarykey||'::bigint) AS maxid  FROM '||secschemaname||'.'||secondtable||'  s
     -- UNION ALL
-    -- SELECT ''t'' as caption, COUNT(*) AS instances, MAX('+primarykey+') AS maxid, MAX('+updatedatcolumn+') as updated_at FROM '+theschemaname+'.'+secondtable+'  s
-    -- WHERE updated_at <= (SELECT MAX('+updatedatcolumn+') as updated_at FROM '+theschemaname+'.'+thetablename+' f)
-    )
-)
+    -- SELECT ''t'' as caption, COUNT(*) AS instances, MAX('||primarykey||')::bigint AS maxid FROM '||secschemaname||'.'||secondtable||'  s
+    -- WHERE updated_at <= (SELECT MAX('||updatedatcolumn||') as updated_at FROM '||theschemaname||'.'||thetablename||' f)
+    ) SRC
+) SRC
 '  AS OUTPUT
    FROM tmp_important_metadata;
 
@@ -128,11 +133,9 @@ SELECT
 --Notes 1: Does not require updatedatcolumn column
 --Notes 2: secondtableinstances - firsttableinstances = Records missed to insert within incremental load.
 SELECT
-'
-SELECT count(*) as secondtableinstances, count('+thetablename+'.'+primarykey+') as firsttableinstances
-FROM '+theschemaname+'.'+secondtable+'
-LEFT JOIN '+theschemaname+'.'+thetablename+'
-ON '+thetablename+'.'+primarykey+' = '+secondtable+'.'+primarykey+'
-WHERE '+secondtable+'.'+primarykey+'  <= (SELECT MAX('+thetablename+'.'+primarykey+') FROM '+theschemaname+'.'+thetablename+')
-'
- FROM tmp_important_metadata;
+'SELECT count(*) as secondtableinstances, count(f.'||primarykey||') as firsttableinstances, count(*)- count(f.id_config) as diff
+FROM '||secschemaname||'.'||secondtable||' s
+LEFT JOIN '||theschemaname||'.'||thetablename||' f
+ON f.'||primarykey||' = s.'||primarykey||'
+WHERE s.'||primarykey||'::bigint  <= (SELECT MAX('||primarykey||'::bigint) FROM '||theschemaname||'.'||thetablename||')' AS OUTPUT
+FROM tmp_important_metadata;
