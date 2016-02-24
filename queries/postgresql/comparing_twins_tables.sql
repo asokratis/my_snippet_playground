@@ -133,7 +133,7 @@ SELECT
 --Notes 1: Does not require updatedatcolumn column
 --Notes 2: secondtableinstances - firsttableinstances = Records missed to insert within incremental load.
 SELECT
-'SELECT count(*) as secondtableinstances, count(f.'||primarykey||') as firsttableinstances, count(*)- count(f.id_config) as diff
+'SELECT count(*) as secondtableinstances, count(f.'||primarykey||') as firsttableinstances, count(*)- count(f.'||primarykey||') as diff
 FROM '||secschemaname||'.'||secondtable||' s
 LEFT JOIN '||theschemaname||'.'||thetablename||' f
 ON f.'||primarykey||' = s.'||primarykey||'
