@@ -9,7 +9,7 @@ CREATE TEMPORARY TABLE temp_table_metadata AS (
 SELECT
       substring(p.nspname,1,999)::varchar(999)      AS theschemaname, --currently, both sibling tables are expected to be in both schema (i.e. put both sibling tables in a testing schema for testing purposes)
       substring(c.relname,1,999)::varchar(999)      AS thetablename,
-      a.attnum::varchar(999)                        AS ordinalposition,
+      a.attnum::bigint                              AS ordinalposition,
       substring(a.attname,1,999)::varchar(999)      AS thecolumnname,
       substring(t.typname,1,999)::varchar(999)      AS thedatatype,
       '<INPUT_SECOND_SIBLING_TABLE>'::varchar(999)  AS secondtable,
