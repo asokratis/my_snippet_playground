@@ -1,6 +1,6 @@
 --Logs
 --Version 0.01 Read description for more info. Made it compatible for Redshift. Amendments later will be done to make it compatible for native Postgresql.
-
+--Version 0.02 compatible now also with native postgresql
 --Description
 --Tables with Columns Containing Invalid Character
 --You Do: Input the invalid character. Input the table names (along their schema name) to check if that invalid character exists in any of the columns with the appropriate data type we also define based on our input.
@@ -14,7 +14,7 @@ SELECT
       substring(c.relname,1,999)::varchar(999)      AS thetablename,
       a.attnum::bigint                              AS ordinalposition,
       substring(a.attname,1,999)::varchar(999)      AS thecolumnname,
-      '<INPUT_VALUE_TO_FIND>'                       AS invalidcharacter -- case insensitive
+      '<INPUT_VALUE_TO_FIND>'::varchar(999)         AS invalidcharacter -- case insensitive
 
    FROM
    pg_class     c,
@@ -61,7 +61,7 @@ SELECT output FROM (
 SELECT
       R,
       1 AS priority,
-      CASE WHEN R = 1 THEN '(' ELSE ' UNION ALL (' END + 'SELECT '''+theschemaname+'.'+thetablename+''' as thetable, '''' '  AS OUTPUT
+      CASE WHEN R = 1 THEN '(' ELSE ' UNION ALL (' END || 'SELECT '''||theschemaname||'.'||thetablename||''' as thetable, '''' '  AS OUTPUT
 
    FROM tmp_important_metadata
 )
@@ -70,7 +70,7 @@ UNION ALL
 SELECT
       h.R,
       2 AS priority,
-      '+MAX(CASE WHEN position('''+invalidcharacter+''' in lower('+thecolumnname+')) <> 0 THEN '','+thecolumnname+''' ELSE '''' END)' AS  OUTPUT
+      '||MAX(CASE WHEN position('''||invalidcharacter||''' in lower('||thecolumnname||')) <> 0 THEN '','||thecolumnname||''' ELSE '''' END)' AS  OUTPUT
 
    FROM       temp_table_metadata    AS d
 
@@ -83,7 +83,7 @@ UNION ALL
 SELECT
       R,
       3 AS priority,
-      'AS OUTPUT FROM '+theschemaname+'.'+thetablename +')' AS OUTPUT
+      'AS OUTPUT FROM '||theschemaname||'.'||thetablename ||')' AS OUTPUT
 
    FROM tmp_important_metadata
 )
