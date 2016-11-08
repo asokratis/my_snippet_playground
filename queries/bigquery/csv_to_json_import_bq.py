@@ -16,7 +16,7 @@ row_set.register_processor(offset_processor(offset+1))
 types = type_guess(row_set.sample, strict=True)
 
 for i in range(len(headers)):
-    output = ""
+    output = "[\n"
     if ("DATE" in str(types[i]).upper()):
         types[i] = "TIMESTAMP"
     elif ("DECIMAL" in str(types[i]).upper()):
