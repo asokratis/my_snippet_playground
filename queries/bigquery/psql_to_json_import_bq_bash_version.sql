@@ -7,8 +7,8 @@ SELECT   p.nspname || '_' || c.relname || '.json' AS filename,
          CASE WHEN position('character varying' in format_type(a.atttypid, a.atttypmod)) = 1 OR
                    position('text'              in format_type(a.atttypid, a.atttypmod)) = 1 THEN 'STRING'
               WHEN position('numeric'           in format_type(a.atttypid, a.atttypmod)) = 1 THEN 'FLOAT'
-              WHEN position('date'              in format_type(a.atttypid, a.atttypmod)) = 1 OR
-                   position('timestamp'         in format_type(a.atttypid, a.atttypmod)) = 1 THEN 'TIMESTAMP'
+              WHEN position('date'              in format_type(a.atttypid, a.atttypmod)) = 1 THEN 'DATE'
+              WHEN position('timestamp'         in format_type(a.atttypid, a.atttypmod)) = 1 THEN 'TIMESTAMP'
               WHEN position('bigint'            in format_type(a.atttypid, a.atttypmod)) = 1 OR
                    position('smallint'          in format_type(a.atttypid, a.atttypmod)) = 1 THEN 'INTEGER'
               ELSE upper(format_type(a.atttypid, a.atttypmod)) END || '"}' || 
