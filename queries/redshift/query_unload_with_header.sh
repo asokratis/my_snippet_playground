@@ -9,7 +9,7 @@ resultset=""
 for i in $columnlist
 do
 resultset="$resultset, $i"
-headercomma="$headercomma, '$i' AS $i"
+headercomma="$headercomma, \'$i\' AS $i"
 columncomma="$columncomma, CAST($i AS varchar(8000))"
 done
 echo "SELECT${resultset#?} FROM ( SELECT 1 as i$headercomma UNION ALL SELECT 2 AS i$columncomma FROM $tablelist ) t ORDER BY i"
