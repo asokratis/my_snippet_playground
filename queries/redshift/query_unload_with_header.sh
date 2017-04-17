@@ -10,10 +10,10 @@ resultset=""
 for i in $columnlist
 do
 rawcolumn=$i
-if [[ $i == *"("* ]]
-then
-    rawcolumn=`echo $i | cut -d "(" -f2 | cut -d ")" -f1`
-fi
+case "$i" in 
+*"("*)
+rawcolumn=`echo $i | cut -d "(" -f2 | cut -d ")" -f1`;;
+esac
 resultset="$resultset, $rawcolumn"
 headercomma="$headercomma, \'$rawcolumn\' AS $rawcolumn"
 columncomma="$columncomma, CAST($i AS varchar(8000)) AS $rawcolumn"
