@@ -23,7 +23,8 @@ join
   SELECT  'QQQ'||cast(t.tableid as varchar(10))||'ZZZ'|| ','|| '{"name":"' ||column_name||'", "type":"' || 
    CASE WHEN       position('varchar' in decode(udt_name,'bpchar','char',udt_name)) = 1 OR
                    position('text'              in decode(udt_name,'bpchar','char',udt_name)) = 1 THEN 'STRING'
-              WHEN position('numeric'           in decode(udt_name,'bpchar','char',udt_name)) = 1 THEN 'FLOAT'
+              WHEN position('numeric'           in decode(udt_name,'bpchar','char',udt_name)) = 1 OR
+                   position('float'           in decode(udt_name,'bpchar','char',udt_name)) = 1 THEN 'FLOAT'
               WHEN position('date'              in decode(udt_name,'bpchar','char',udt_name)) = 1 THEN 'DATE'
               WHEN position('timestamp'         in decode(udt_name,'bpchar','char',udt_name)) = 1 THEN 'TIMESTAMP'
               WHEN position('bigint'            in decode(udt_name,'bpchar','char',udt_name)) = 1 OR
