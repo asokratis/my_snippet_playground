@@ -56,8 +56,8 @@ join
  SELECT substring(n.nspname,1,500) as schemaname, substring(c.relname,1,500) as tablename, c.oid as tableid 
  FROM pg_namespace n, pg_class c
  WHERE n.oid = c.relnamespace 
-   AND nspname NOT IN ('pg_catalog', 'pg_toast', 'information_schema')
+ AND nspname NOT IN ('pg_catalog', 'pg_toast', 'information_schema')
+ AND n.nspname = '<SCHEMA_NAME>' and c.relname in ('<TABLE_X>','<TABLE_Y>')
  ) t 
 )) cp on tm.tableid=cp.tableid
-where tm.schemaname = '<SCHEMA_NAME>' and tm.tablename in ('<TABLE_X>','<TABLE_Y>')
 ) src
